@@ -1,0 +1,30 @@
+name: Build Byte Vortex Fundo
+on:
+  push:
+    paths:
+      - .github/workflows/fundo.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Extract source
+        run: mkdir -p android-app && tar -xzf byte-vortex-fundo-v2.tar.gz -C android-app
+      - name: Build APK
+        run: gradle -p android-app assembleDebug
+      - name: Publish APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk Byte-Vortex-fundo.apk
+          gh release create fundo-v1 Byte-Vortex-fundo.apk --title "Byte Vortex Offline - fundo personalizado" --notes "Fundo personalizado; apos escolher local, o arquivo e salvo e retorna ao aplicativo. Catalogo local, email nao verificado e pagamentos inativos."
