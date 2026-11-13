@@ -8,7 +8,38 @@ permissions:
   contents: write
 jobs:
   build:
+name: Build Byte Vortex Instalar
+on:
+  push:
+    paths:
+      - .github/workflows/instalar.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Extract source
+        run: mkdir -p android-app && tar -xzf byte-vortex-instalar-final.tar.gz -C android-app
+      - name: Fix PackageInstaller commit API
+        run: sed -i 's/session.commit(pi);/session.commit(pi.getIntentSender());/' android-app/app/src/main/java/com/bytevortex/loja/MainActivity.java
+      - name: Build APK
+        run: gradle -p android-app assembleDebug
+      - name: Publish APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk Byte-Vortex-instalar.apk
+          gh release create instalar-v1 Byte-Vortex-instalar.apk --title "Byte Vortex - instalar APK" --notes "Instalador Android para APK local. Funcionalidade nao testada em celular; catalogo local, sem sincronizacao de conta Google e sem pagamentos ativos."    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
