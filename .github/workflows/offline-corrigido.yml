@@ -1,0 +1,32 @@
+name: Byte Vortex offline corrigido
+on:
+  push:
+    paths: [ '.github/workflows/offline-corrigido.yml' ]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Extrair e corrigir
+        run: |
+          mkdir android-app
+          tar -xzf byte-vortex-instalar-final.tar.gz -C android-app
+          sed -i 's/session.commit(pi);/session.commit(pi.getIntentSender());/' android-app/app/src/main/java/com/bytevortex/loja/MainActivity.java
+      - name: Compilar APK
+        run: gradle -p android-app assembleDebug --no-daemon
+      - name: Publicar APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk Byte-Vortex-offline-instalar.apk
+          gh release create offline-instalar-v2 Byte-Vortex-offline-instalar.apk --title 'Byte Vortex Offline - Instalar' --notes 'APK offline. Catalogo e arquivos somente neste aparelho; nao sincroniza. Instalacao nao testada em celular.'
